@@ -1,5 +1,5 @@
 from rfc3986 import is_valid_uri
-
+import functools
 
 MINING_REWARD = 10
 
@@ -80,14 +80,9 @@ def get_balances(participant):
     trans_recipient = [[transactions['amount'] for transactions in block['transactions'] if transactions['recipient'] == participant] for block in blockchain]
     open_trans_sender = [transactions['amount'] for transactions in open_transactions if transactions['sender'] == participant]
     trans_sender.append(open_trans_sender)
-    amount_sent = 0
-    for trans in trans_sender:
-        if len(trans) > 0:
-            amount_sent += trans[0]
-    amount_received = 0
-    for trans in trans_recipient:
-        if len(trans) > 0:
-            amount_sent += trans[0]
+    amount_sent = functools.reduce(lambda trans_sum,trans_amount:trans_sum+sum(trans_amount) if len(trans_amount)>0 else trans_sum + 0, trans_sender, 0)
+    amount_received = functools.reduce(lambda trans_sum, trans_amount: trans_sum+sum(trans_amount) if len(trans_amount)>0 else trans_sum + 0, trans_recipient, 0)
+   
     return amount_received - amount_sent
 
 
@@ -156,4 +151,4 @@ while waiting_input:
         print_blockchain()
         print('Invalid blockchain!')
         break
-    print(get_balances('Adrian'))
+    print('Balance of {}: {:6.2f}'.format('Adrian',get_balances('Adrian')))
