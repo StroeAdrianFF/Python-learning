@@ -1,9 +1,10 @@
 from functools import reduce
 import hashlib as hashing
 from collections import OrderedDict
-
-
 from  hash_util import  hash_string256, hash_block
+import json
+import pickle #import python data to binary data in a file to serialize and unserialize
+
 
 MINING_REWARD = 10
 
@@ -18,6 +19,50 @@ blockchain = [genesis_block]
 open_transactions = []
 owner = 'Adrian'
 participants = {'Adrian'}
+
+def load_data():
+    with open('savedChain.txt', mode='r') as opened:#rb = read binary
+        #content = pickle.loads(opened.read())
+        content = opened.readlines()
+        global blockchain
+        global open_transactions
+        #blockchain = content['chain']
+        #open_transactions = content['ot']
+        updated_blockchain = []
+        blockchain = json.loads(content[0][:-1])
+        for block in blockchain:
+             updated_block = {
+                 'previous_hash': block['previous_hash'],
+                 'index': block['index'],
+                 'proof': block['proof'],
+                 'transactions': [OrderedDict(
+                     [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions']]
+             }
+             updated_blockchain.append(updated_block)
+        blockchain = updated_blockchain
+        open_transactions = json.loads(content[1])
+        updated_transactions = []
+        for tx in open_transactions:
+             updated_transaction = OrderedDict(
+                 [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
+             updated_transactions.append(updated_transaction)
+        open_transactions = updated_transactions
+        
+
+load_data()
+
+
+def save_data():
+    with open('savedChain.txt', mode = 'w') as saved:#wb = write binary
+        saved.write(json.dumps(blockchain))
+        saved.write('\n')
+        saved.write(json.dumps(open_transactions))
+        #save_data = {
+        #    'chain': blockchain,
+        #    'ot': open_transactions
+        #}
+        #saved.write(pickle.dumps(save_data))
+
 
 
 def get_last_blockchain_value():
@@ -38,6 +83,7 @@ def add_transaction(recipient, sender=owner, amount=1.0):
         open_transactions.append(transaction)
         participants.add(sender)  # duplicates will be ignored
         participants.add(recipient)
+        save_data()
         return True
     return False
 
@@ -153,6 +199,7 @@ while waiting_input:
     elif user_choice == '2':
         if mine_block():
             open_transactions = []
+            save_data()
     elif user_choice == '3':
         print_blockchain()
     elif user_choice == '5':
