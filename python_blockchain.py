@@ -54,7 +54,7 @@ class Blockchain:
                     updated_transactions.append(updated_transaction)
                 self.__open_transactions = updated_transactions
         except (IOError, IndexError):
-           pass
+            pass
         finally:
             print('Cleanup!')
         
@@ -88,6 +88,8 @@ class Blockchain:
 
 
     def get_balances(self):
+        if self.host_node == None:
+            return None
         participant = self.host_node
         trans_sender = [[transactions.amount for transactions in block.transactions if transactions.sender == participant] for block in self.__chain]
         trans_recipient = [[transactions.amount for transactions in block.transactions if transactions.recipient == participant] for block in self.__chain]
@@ -125,7 +127,7 @@ class Blockchain:
 
     def mine_block(self):
         if self.host_node == None:
-            return False
+            return None
         last_block = self.__chain[-1]
         hashed_block = hash_block(last_block)
         proof = self.pow()
@@ -134,14 +136,12 @@ class Blockchain:
         copied_transactions = self.__open_transactions[:] #copy open transactions from start to end
         for trans in copied_transactions:
             if not Wallet.verify_transaction(trans):
-                return False
+                return None
         copied_transactions.append(reward_transaction)
         block = Block(len(self.__chain), hashed_block, copied_transactions, proof)
         
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data()
-        return True
-
-
+        return block
 
