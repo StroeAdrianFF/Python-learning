@@ -5,9 +5,10 @@ from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA256
 
 class Wallet:
-    def __init__(self):
+    def __init__(self, node_id):
         self.private_key = None
         self.public_key = None
+        self.node_id = node_id
 
 
     def create_keys(self):
@@ -19,7 +20,7 @@ class Wallet:
 
     def load_keys(self):
         try:
-            with open('wallet.txt', mode='r') as wallet_file:
+            with open(f'wallet-{self.node_id}.txt', mode='r') as wallet_file:
                 keys = wallet_file.readlines()
                 public_key = keys[0][:-1]
                 private_key = keys[1]
@@ -34,7 +35,7 @@ class Wallet:
     def save_keys(self):
         if self.public_key != None and self.private_key != None:
             try:
-                with open('wallet.txt', mode='w') as wallet_file:
+                with open(f'wallet-{self.node_id}.txt', mode='w') as wallet_file:
                     wallet_file.write(self.public_key)
                     wallet_file.write('\n')
                     wallet_file.write(self.private_key)
