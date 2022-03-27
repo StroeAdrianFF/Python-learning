@@ -1,7 +1,8 @@
 from functools import reduce
 import hashlib as hashing
 import json
-import pickle #import python data to binary data in a file to serialize and unserialize
+import pickle
+from flask import request #import python data to binary data in a file to serialize and unserialize
 import requests
 
 from block import Block
@@ -197,6 +198,31 @@ class Blockchain:
                         print('Item was already removed')
         self.save_data()
         return True
+
+
+    def resolve(self):
+        winner_chain = self.chain
+        replace = False
+        for node in self.__peer_nodes:
+            url = f'http://{node}/chain'
+            try:
+                response = requests.get(url)
+                node_chain = response.json()
+                node_chain = [Block(block['index'], block['previous_hash'], [Transaction(trans['sender'], trans['recipient'], trans['signature'], trans['amount']) for trans in block['transactions']], block['proof'], block['timestamp']) for block in node_chain]
+                node_chain_length = len(node_chain)
+                local_chain_length = len(winner_chain)
+                if node_chain_length > local_chain_length and Verification.verify_chain(node_chain):
+                    winner_chain = node_chain
+                    replace = True
+            except requests.exceptions.ConnectionError: 
+                continue
+        self.resolve_conflicts = False
+        self.chain = winner_chain
+        if replace:
+            self.__open_transactions = []
+        self.save_data()
+        return replace
+
 
     def add_peer_node(self,node):
         self.__peer_nodes.add(node) #add() special set method
